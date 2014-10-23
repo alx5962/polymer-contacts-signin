@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+
+    <title>google-contacts Demo</title>
+
+    <script src="http://www.polymer-project.org/components/platform/platform.js"></script>   
+    <link rel="import" href="http://www.polymer-project.org/components/font-roboto/roboto.html">
+    <link rel="import" href="./components/google-signin/google-signin.html">
+    <link rel="import" href="http://www.polymer-project.org/components/polymer-jsonp/polymer-jsonp.html">
+
+
+    <style>
+      * { font-family: 'RobotoDraft', 'Roboto', sans-serif; line-height:1.2; vertical-align:middle; }
+
+      body {
+        background: rgba(204, 204, 204, 0.31);
+      }
+     
+    </style>
+
+</head>
+
+<body unresolved>
+    <!--
+      The clientId provided is from the google-signin component page demo (http://googlewebcomponents.github.io/google-signin)  
+      Only http://localhost on port 80 is allowed if you use it. Check your Google Developers Console to create one.
+    -->
+    <p>
+      <google-signin clientId="1054047045356-j8pgqgls9vdef3rl09hapoicumbte0bo.apps.googleusercontent.com" 
+      scopes="https://www.googleapis.com/auth/contacts.readonly"></google-signin>
+    </p>
+    <polymer-element name="my-gcontacts">
+      <template>
+      <style>
+      .tile {
+        display: block;
+        background-color: white;
+        padding: 20px;
+        margin-bottom: 2px;
+        width: 96%;
+        min-height: 20px;
+        font-size: 1.2rem;
+        font-weight: 300;   
+      }  
+      
+      .tile .fullname {
+        font-weight: bold;
+        font-size: 1.3rem;
+        padding: 0 0 3px 0;
+      }  
+       </style>      
+        <google-signin-aware
+            scopes="https://www.googleapis.com/auth/contacts.readonly"
+            on-google-signin-aware-success="{{signIn}}"></google-signin-aware>
+
+        <p>Access: {{status}}</p>
+
+        <div layout vertical center>
+          <template repeat="{{post in posts}}">
+              <div class="tile">
+              <div class="fullname">{{post.title.$t}}</div>
+              <div>{{post.gd$email[0].address}}</div>
+            </div>
+          </template>
+        </div>        
+        
+      </template>
+
+      <script>
+      
+        Polymer('my-gcontacts', {
+          created: function() {
+            this.posts = [];
+          },        
+          status: 'Not granted',
+          signIn: function(response) {
+            this.status = 'Signin granted';
+            var rep = response.detail.result;
+            this.tokenapi = rep.access_token;
+            this.signok();
+            
+          },
+          signok: function() {
+            var token = this.tokenapi;
+            var thisGlobal = this;
+            var jsonp = document.createElement('polymer-jsonp');
+            jsonp.url="https://www.google.com/m8/feeds/contacts/default/full?access_token="+token+"&max-results=5000&alt=json&callback=";
+            jsonp.addEventListener('polymer-response', function(event) {
+              var feed = event.detail.response.feed;
+              //console.log(feed.entry) ;              
+              thisGlobal.posts = feed.entry;
+            });
+            jsonp.go(); 
+                       
+          }                 
+        }); 
+        
+      </script>
+    </polymer-element>      
+
+    <my-gcontacts></my-gcontacts>
+  
+    
+</body>
+</html>
